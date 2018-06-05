@@ -145,3 +145,29 @@ SELECT orders.standard_qty, orders.gloss_qty,
 FROM accounts
 JOIN orders
 	On accounts.id = orders.account_id;
+
+----JOIN Questions Part 1
+SELECT a.primary_poc, w.occurred_at, w.channel, a.name
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+WHERE a.name = 'Walmart';
+
+SELECT r.name region_name, s.name rep_name , a.name account_name
+FROM region r
+JOIN sales_reps s
+	ON r.id = s.region_id
+JOIN accounts a
+	ON s.id = a.sales_rep_id
+ORDER BY a.name;
+
+SELECT r.name region_name, a.name account_name, (o.total_amt_usd / (o.total + .01)) unit_price
+FROM region r
+JOIN sales_reps s
+	ON r.id = s.region_id
+JOIN accounts a
+	ON s.id = a.sales_rep_id
+JOIN orders o
+	ON o.account_id = a.id;
+   
+
