@@ -245,6 +245,8 @@ JOIN accounts a
 WHERE o.occurred_at BETWEEN '01/01/2015' AND '12/31/2015'
 ORDER BY o.occurred_at DESC;
 
+--SQL Aggregations
+----SUM
 
 
 
