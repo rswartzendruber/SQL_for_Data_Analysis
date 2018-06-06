@@ -301,10 +301,95 @@ FROM (SELECT total_amt_usd
 ORDER BY total_amt_usd DESC
 LIMIT 2;
 
+----GROUP BY
+SELECT a.name, o.occurred_at 
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+ORDER BY o.occurred_at
+LIMIT 1;
 
+SELECT a.name, SUM(o.total_amt_usd) total_sales
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.name
+ORDER BY a.name;
 
+SELECT a.name, w.occurred_at, w.channel
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+ORDER BY w.occurred_at DESC
+LIMIT 1;
 
+SELECT w.channel, COUNT(w.id) times_used
+FROM web_events w
+GROUP BY w.channel
+ORDER BY times_used;
 
+SELECT a.primary_poc
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+ORDER BY w.occurred_at
+LIMIT 1;
 
+SELECT a.name, MIN(o.total_amt_usd) smallest_order_amt
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.name
+ORDER BY smallest_order_amt;
 
+SELECT r.name, COUNT(s.id) rep_count
+FROM region r
+JOIN sales_reps s
+	ON r.id = s.region_id
+GROUP BY r.name
+ORDER BY rep_count;
 
+----GROUP BY Part 2
+SELECT 
+	a.name, 
+	AVG(o.standard_qty) 	avg_std_qty,
+	AVG(o.gloss_qty)			avg_gloss_qty,
+	AVG(o.poster_qty)		avg_poster_qty
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.name
+ORDER BY a.name;
+
+SELECT 
+	a.name, 
+	AVG(o.standard_amt_usd) 	avg_std_usd,
+	AVG(o.gloss_amt_usd)		avg_gloss_usd,
+	AVG(o.poster_amt_usd)		avg_poster_usd
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.name
+ORDER BY a.name;
+
+SELECT s.name, w.channel, COUNT(w.id) times_used
+FROM web_events w
+JOIN accounts a
+	ON w.account_id = a.id
+JOIN sales_reps s
+	ON a.sales_rep_id = s.id
+GROUP BY s.name, w.channel
+ORDER BY times_used DESC;
+
+SELECT r.name, w.channel, COUNT(w.id) times_used
+FROM web_events w
+JOIN accounts a
+	ON w.account_id = a.id
+JOIN sales_reps s
+	ON a.sales_rep_id = s.id
+JOIN region r
+	ON r.id = s.region_id
+GROUP BY r.name, w.channel
+ORDER BY times_used DESC;
+
+----DISTINCT
