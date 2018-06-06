@@ -393,3 +393,202 @@ GROUP BY r.name, w.channel
 ORDER BY times_used DESC;
 
 ----DISTINCT
+SELECT DISTINCT a.name account_name, r.name region_name
+FROM accounts a
+JOIN sales_reps s
+	ON a.sales_rep_id = s.id
+JOIN region r
+	ON s.region_id = r.id
+ORDER BY a.name, r.name;
+
+SELECT DISTINCT s.id, s.name
+FROM sales_reps s;
+
+SELECT s.id, s.name rep_name, COUNT(a.id) account_count
+FROM sales_reps s
+JOIN accounts a
+	ON a.sales_rep_id = s.id
+GROUP BY s.id, rep_name
+ORDER BY account_count;
+
+----HAVING
+SELECT s.id, s.name rep_name, COUNT(a.id) account_count
+FROM sales_reps s
+JOIN accounts a
+	ON a.sales_rep_id = s.id
+GROUP BY s.id, rep_name
+HAVING COUNT(a.id) > 5
+ORDER BY account_count;
+		--34
+
+SELECT a.id, a.name account_name, COUNT(o.id) order_count
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+HAVING COUNT(o.id) > 20
+ORDER BY a.name;
+		--120
+
+SELECT a.id, a.name account_name, COUNT(o.id) order_count
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+ORDER BY order_count DESC
+LIMIT 1;
+		--Leucadia National
+
+SELECT a.id, a.name account_name, SUM(o.total_amt_usd) total_spent
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+HAVING SUM(o.total_amt_usd) > 30000
+ORDER BY total_spent DESC;
+		--204
+
+SELECT a.id, a.name account_name, SUM(o.total_amt_usd) total_spent
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+HAVING SUM(o.total_amt_usd) < 1000
+ORDER BY total_spent DESC;
+		--3
+
+SELECT a.id, a.name account_name, SUM(o.total_amt_usd) total_spent
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+ORDER BY total_spent DESC
+LIMIT 1;
+		--EOG Resources
+
+SELECT a.id, a.name account_name, SUM(o.total_amt_usd) total_spent
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY a.id, account_name
+ORDER BY total_spent
+LIMIT 1;
+		--Nike
+
+SELECT a.name account_name, w.channel, COUNT(w.id) times_used
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+WHERE w.channel = 'facebook'
+GROUP BY account_name, w.channel
+HAVING COUNT(w.id) > 6
+ORDER BY times_used;
+		--46
+
+SELECT a.name account_name, w.channel, COUNT(w.id) times_used
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+WHERE w.channel = 'facebook'
+GROUP BY account_name, w.channel
+ORDER BY times_used DESC
+LIMIT 1;
+		--Gilead Sciences
+
+SELECT a.name account_name, w.channel, COUNT(w.id) times_used
+FROM accounts a
+JOIN web_events w
+	ON a.id = w.account_id
+GROUP BY account_name, w.channel
+ORDER BY times_used DESC
+LIMIT 10;
+		--direct
+
+----DATE FUNCTIONS
+SELECT DATE_PART('year', o.occurred_at) AS year, SUM(o.total_amt_usd) total_sales
+FROM orders o
+GROUP BY 1
+ORDER BY 2 DESC;
+		--2016
+
+SELECT DATE_PART('month', o.occurred_at) AS month, SUM(o.total_amt_usd) total_sales
+FROM orders o
+WHERE o.occurred_at BETWEEN '2014-01-01' AND '2016-12-31'
+GROUP BY 1
+ORDER BY 2 DESC;
+		--12
+
+SELECT DATE_PART('year', o.occurred_at) AS year, COUNT(o.id) order_qty
+FROM orders o
+GROUP BY 1
+ORDER BY 2 DESC;
+		--2016
+
+SELECT DATE_PART('month', o.occurred_at) AS month, COUNT(o.id) order_qty
+FROM orders o
+WHERE o.occurred_at BETWEEN '2014-01-01' AND '2016-12-31'
+GROUP BY 1
+ORDER BY 2 DESC;
+		--2016-12-01
+
+SELECT a.name, DATE_TRUNC('month', o.occurred_at) AS month, SUM(o.gloss_amt_usd) total_gloss_amt_usd
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+WHERE a.name = 'Walmart'
+GROUP BY 1, 2
+ORDER BY 3 DESC
+LIMIT 1;
+		--2016-05-01
+
+----CASE
+SELECT 	a.name AS account_name,
+		SUM(o.total_amt_usd) AS total_sales,
+		CASE WHEN SUM(o.total_amt_usd) > 200000 THEN 'greater than 200,000'
+		 	 WHEN SUM(o.total_amt_usd) >= 100000 AND SUM(o.total_amt_usd) <= 200000  THEN 'between 100,000 and 200,000'
+		 	 ELSE 'under 100,000' END AS level
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT 	a.name AS account_name,
+		SUM(o.total_amt_usd) AS total_sales,
+		CASE WHEN SUM(o.total_amt_usd) > 200000 THEN 'greater than 200,000'
+		 	 WHEN SUM(o.total_amt_usd) >= 100000 AND SUM(o.total_amt_usd) <= 200000  THEN 'between 100,000 and 200,000'
+		 	 ELSE 'under 100,000' END AS level
+FROM accounts a
+JOIN orders o
+	ON a.id = o.account_id
+WHERE o.occurred_at BETWEEN '2016-01-01' AND '2017-12-31'
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT 	s.name AS rep_name,
+		COUNT(o.id) AS order_qty,
+		CASE WHEN COUNT(o.id) >200 THEN 'top'
+			 ELSE 'not' END AS is_top
+FROM sales_reps s
+JOIN accounts a
+	ON s.id = a.sales_rep_id
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT 	s.name AS rep_name,
+		COUNT(o.id) AS order_qty,
+		SUM(o.total_amt_usd) AS total_sales,
+		CASE WHEN COUNT(o.id) > 200 OR SUM(o.total_amt_usd) > 750000 THEN 'top'
+			 WHEN COUNT(o.id) > 150 OR SUM(o.total_amt_usd) > 500000 THEN 'middle'
+			 ELSE 'low' END AS rep_level
+FROM sales_reps s
+JOIN accounts a
+	ON s.id = a.sales_rep_id
+JOIN orders o
+	ON a.id = o.account_id
+GROUP BY 1
+ORDER BY 3 DESC;
+
+--SQL Subqueries & Temporary Tables
