@@ -818,3 +818,147 @@ SELECT AVG(t1.total_purchases)
 FROM t1;
 
 --SQL Data Cleaning
+----LEFT & RIGHT
+SELECT RIGHT(a.website, 3) AS root_domain, COUNT(a.id) AS site_count
+FROM accounts a
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT LEFT(a.name, 1) AS first_letter, COUNT(a.id) AS company_count
+FROM accounts a
+GROUP BY 1
+ORDER BY 2 DESC;
+
+WITH t1 AS (
+		SELECT 	CASE WHEN LEFT(a.name, 1) NOT IN ('1','2','3','4','5','6','7','8','9','0') THEN 1 ELSE 0 END AS letters,
+				CASE WHEN LEFT(a.name, 1) IN ('1','2','3','4','5','6','7','8','9','0') THEN 1 ELSE 0 END AS nums 
+		FROM accounts a)
+
+SELECT SUM(letters) AS letter_count, SUM(nums) AS num_count
+FROM t1;
+
+WITH t1 AS (
+		SELECT 	CASE WHEN LEFT(LOWER(a.name), 1) IN ('a','e','i','o','u') THEN 1 ELSE 0 END AS vowels,
+		 		CASE WHEN LEFT(LOWER(a.name), 1) NOT IN ('a','e','i','o','u') THEN 1 ELSE 0 END AS other
+		FROM accounts a)
+
+SELECT SUM(vowels) AS vowel_count, SUM(other) as other_count
+FROM t1;
+
+----POSITION and STRPOS
+
+SELECT 	a.primary_poc,
+		LEFT(a.primary_poc, POSITION(' ' IN a.primary_poc) - 1) AS first_name,
+		RIGHT(a.primary_poc, LENGTH(a.primary_poc) - POSITION(' ' IN a.primary_poc)) AS last_name
+FROM accounts a
+ORDER BY 1;
+
+SELECT 	s.name,
+		LEFT(s.name, STRPOS(s.name, ' ') - 1) AS first_name,
+		RIGHT(s.name, LENGTH(s.name) - STRPOS(s.name, ' ')) AS last_name
+FROM sales_reps s
+ORDER BY 1;
+
+----CONCAT
+SELECT a.name, a.primary_poc, 
+	REPLACE(CONCAT(
+		LEFT(a.primary_poc, POSITION(' ' IN a.primary_poc) - 1),
+		'.',
+		RIGHT(a.primary_poc, LENGTH(a.primary_poc) - POSITION(' ' IN a.primary_poc)),
+		'@',
+		a.name,
+		'.com'), ' ', '') AS email_address
+FROM accounts a
+ORDER BY a.name
+
+SELECT a.name, a.primary_poc, 
+	CONCAT(
+		LEFT(a.primary_poc, POSITION(' ' IN a.primary_poc) - 1),
+		'.',
+		RIGHT(a.primary_poc, LENGTH(a.primary_poc) - POSITION(' ' IN a.primary_poc)),
+		'@',
+		a.name,
+		'.com') AS email_address
+FROM accounts a
+ORDER BY a.name
+
+WITH t1 AS (
+		SELECT 	a.name AS account_name,
+				LEFT(a.primary_poc, POSITION(' ' IN a.primary_poc) - 1) AS poc_first_name,
+				RIGHT(a.primary_poc, LENGTH(a.primary_poc) - POSITION(' ' IN a.primary_poc)) AS poc_last_name
+		FROM accounts a)
+
+
+SELECT t1.account_name, t1.poc_first_name, t1.poc_last_name,
+	CONCAT(
+		LOWER(LEFT(t1.poc_first_name, 1)),
+		LOWER(RIGHT(t1.poc_first_name, 1)),
+		LOWER(LEFT(t1.poc_last_name, 1 )),
+		LOWER(RIGHT(t1.poc_last_name, 1)),
+		LENGTH(t1.poc_first_name),
+		LENGTH(t1.poc_last_name),
+		UPPER(REPLACE(t1.account_name, ' ', ''))) AS password
+FROM t1
+ORDER BY t1.account_name
+
+----CAST
+SELECT CONCAT(
+		SUBSTR(date, 7, 4),
+		'-',
+		SUBSTR(date, 1, 2),
+		'-',
+		SUBSTR(date, 4, 2))::date AS date
+FROM sf_crime_data
+LIMIT 10;
+
+----COALESCE
+SELECT *
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id
+WHERE o.total IS NULL;
+
+SELECT COALESCE(a.id, a.id) filled_id, a.name, a.website, a.lat, a.long, a.primary_poc, a.sales_rep_id, o.*
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id
+WHERE o.total IS NULL;
+
+SELECT COALESCE(a.id, a.id) filled_id, a.name, a.website, a.lat, a.long,
+	 a.primary_poc, a.sales_rep_id, COALESCE(o.account_id, a.id) account_id, o.occurred_at,
+	 o.standard_qty, o.gloss_qty, o.poster_qty, o.total, o.standard_amt_usd, 
+	 o.gloss_amt_usd, o.poster_amt_usd, o.total_amt_usd
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id
+WHERE o.total IS NULL;
+
+SELECT COALESCE(a.id, a.id) filled_id, a.name, a.website, 
+	a.lat, a.long, a.primary_poc, a.sales_rep_id, COALESCE(o.account_id, a.id) account_id, 
+	o.occurred_at, COALESCE(o.standard_qty, 0) standard_qty, COALESCE(o.gloss_qty,0) gloss_qty, 
+	COALESCE(o.poster_qty,0) poster_qty, COALESCE(o.total,0) total, COALESCE(o.standard_amt_usd,0) standard_amt_usd, 
+	COALESCE(o.gloss_amt_usd,0) gloss_amt_usd, COALESCE(o.poster_amt_usd,0) poster_amt_usd, 
+	COALESCE(o.total_amt_usd,0) total_amt_usd
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id
+WHERE o.total IS NULL;
+
+SELECT *
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id;
+
+SELECT COALESCE(a.id, a.id) filled_id, a.name, a.website, 
+	a.lat, a.long, a.primary_poc, a.sales_rep_id, COALESCE(o.account_id, a.id) account_id, 
+	o.occurred_at, COALESCE(o.standard_qty, 0) standard_qty, COALESCE(o.gloss_qty,0) gloss_qty, 
+	COALESCE(o.poster_qty,0) poster_qty, COALESCE(o.total,0) total, COALESCE(o.standard_amt_usd,0) standard_amt_usd, 
+	COALESCE(o.gloss_amt_usd,0) gloss_amt_usd, COALESCE(o.poster_amt_usd,0) poster_amt_usd, 
+	COALESCE(o.total_amt_usd,0) total_amt_usd
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id;
+
+--SQL Window Functions
+----
+
