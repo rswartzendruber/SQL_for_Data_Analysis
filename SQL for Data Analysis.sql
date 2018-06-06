@@ -247,10 +247,64 @@ ORDER BY o.occurred_at DESC;
 
 --SQL Aggregations
 ----SUM
+SELECT SUM(o.poster_qty) total_poster_qty
+FROM orders o;
+		--723646
+
+SELECT SUM(o.standard_qty) total_standard_qty
+FROM orders o;
+		--1938346
+
+SELECT SUM(o.total_amt_usd) total_sales_usd
+FROM orders o;
+		--23141511.83
+
+SELECT o.id, o.standard_amt_usd + gloss_amt_usd std_and_gloss_usd
+FROM orders o;
+
+SELECT SUM(standard_amt_usd) / (SUM(standard_qty) + 0.001) avg_unit_price
+FROM orders o;
+		--4.9899999974256402
+
+----MIN, MAX, & AVERAGE
+SELECT MIN(o.occurred_at) earliest_order FROM orders o;
+		--2013-12-04T04:22:44.000Z
+
+SELECT o.occurred_at
+FROM orders o
+ORDER BY o.occurred_at
+LIMIT 1;
+
+SELECT MAX(w.occurred_at) newest_event
+FROM web_events w;
+		--2017-01-01T23:51:09.000Z
+
+SELECT w.occurred_at
+FROM web_events w
+ORDER BY w.occurred_at DESC
+LIMIT 1;
+
+SELECT
+	AVG(o.standard_qty)		avg_std_qty,
+	AVG(o.standard_amt_usd) avg_std_usd,
+	AVG(o.gloss_qty)		avg_gloss_qty,
+	AVG(o.gloss_amt_usd)	avg_gloss_usd,
+	AVG(o.poster_qty)		avg_poster_qty,
+	AVG(o.poster_amt_usd)	avg_poster_usd
+FROM orders o;
+
+SELECT *
+FROM (SELECT total_amt_usd
+      FROM orders
+      ORDER BY total_amt_usd
+      LIMIT 3457) AS Table1
+ORDER BY total_amt_usd DESC
+LIMIT 2;
 
 
 
 
 
-   
+
+
 
