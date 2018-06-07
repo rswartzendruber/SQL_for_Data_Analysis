@@ -960,5 +960,153 @@ LEFT JOIN orders o
 ON a.id = o.account_id;
 
 --SQL Window Functions
-----
+----Window Functions 1
+SELECT 	o.standard_amt_usd,
+		SUM(o.standard_amt_usd) OVER (ORDER BY o.occurred_at) AS running_total
+FROM orders o;
+
+----Window Functions 2
+SELECT 	DATE_TRUNC('year', o.occurred_at) AS order_year,
+		o.standard_amt_usd,
+		SUM(o.standard_amt_usd) OVER (PARTITION BY DATE_TRUNC('year', o.occurred_at) ORDER BY o.occurred_at) AS running_total
+FROM orders o;
+
+----ROW_NUMBER & RANK
+SELECT 	o.id, o.account_id, o.total,
+		RANK() OVER (PARTITION BY o.account_id ORDER BY o.total DESC) AS total_rank
+FROM orders o;
+
+----Aggregates in Window Functions
+SELECT id,
+       account_id,
+       standard_qty,
+       DATE_TRUNC('month', occurred_at) AS month,
+       DENSE_RANK() OVER (PARTITION BY account_id )AS dense_rank,
+       SUM(standard_qty) OVER (PARTITION BY account_id )AS sum_std_qty,
+       COUNT(standard_qty) OVER (PARTITION BY account_id )AS count_std_qty,
+       AVG(standard_qty) OVER (PARTITION BY account_id )AS avg_std_qty,
+       MIN(standard_qty) OVER (PARTITION BY account_id )AS min_std_qty,
+       MAX(standard_qty) OVER (PARTITION BY account_id )AS max_std_qty
+FROM orders;
+
+----Aliases for Multiple Window Functions
+SELECT id,
+       account_id,
+       DATE_TRUNC('year',occurred_at) AS year,
+       DENSE_RANK() OVER account_year_window AS dense_rank,
+       total_amt_usd,
+       SUM(total_amt_usd) OVER account_year_window AS sum_total_amt_usd,
+       COUNT(total_amt_usd) OVER account_year_window AS count_total_amt_usd,
+       AVG(total_amt_usd) OVER account_year_window AS avg_total_amt_usd,
+       MIN(total_amt_usd) OVER account_year_window AS min_total_amt_usd,
+       MAX(total_amt_usd) OVER account_year_window AS max_total_amt_usd
+FROM orders
+WINDOW account_year_window AS (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at));
+
+----Comparing a Row to Previous Row
+SELECT o.occurred_at,
+       o.total_amt_usd,
+       LEAD(o.total_amt_usd) OVER (ORDER BY o.occurred_at) AS lead,
+       LEAD(o.total_amt_usd) OVER (ORDER BY o.occurred_at) - o.total_amt_usd AS lead_difference
+FROM orders o;
+
+SELECT occurred_at,
+       total_amt_usd,
+       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) AS lead,
+       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) - total_amt_usd AS lead_difference
+FROM (
+SELECT occurred_at,
+       SUM(total_amt_usd) AS total_amt_usd
+  FROM orders 
+ GROUP BY 1
+) sub
+
+----Percentiles
+SELECT 	o.id, 
+		o.account_id,
+		o.occurred_at,
+		o.standard_qty,
+		NTILE(4) OVER (PARTITION BY o.account_id ORDER BY o.standard_qty) AS standard_quartile
+FROM orders o
+ORDER BY 2 DESC;
+
+SELECT 	o.id, 
+		o.account_id,
+		o.occurred_at,
+		o.gloss_qty,
+		NTILE(2) OVER (PARTITION BY o.account_id ORDER BY o.gloss_qty) AS gloss_half
+FROM orders o
+ORDER BY 2 DESC;
+
+SELECT 	o.id, 
+		o.account_id,
+		o.occurred_at,
+		o.total_amt_usd,
+		NTILE(100) OVER (PARTITION BY o.account_id ORDER BY o.total_amt_usd) AS total_percentile
+FROM orders o
+ORDER BY 2 DESC;
+
+--SQL Advanced JOINs & Performance Tuning
+----FULL OUTER JOIN
+SELECT a.*, s.*
+FROM accounts a
+FULL JOIN sales_reps s
+	ON a.sales_rep_id = s.id;
+
+----JOINs with Comparison Operators
+SELECT 	a.name account_name,	
+		a.primary_poc,
+		s.name rep_name
+FROM accounts a
+LEFT JOIN sales_reps s
+	ON a.sales_rep_id = s.id
+	AND a.primary_poc < s.name;
+
+----Self JOINs
+SELECT w1.id AS w1_id,
+       w1.account_id AS w1_account_id,
+       w1.occurred_at AS w1_occurred_at,
+       w1.channel AS w1_channel,
+       w2.id AS w2_id,
+       w2.account_id AS w2_account_id,
+       w2.occurred_at AS w2_occurred_at,
+       w2.channel AS w2_channel
+  FROM web_events w1
+ LEFT JOIN web_events w2
+   ON w1.account_id = w2.account_id
+  AND w2.occurred_at > w1.occurred_at
+  AND w2.occurred_at <= w1.occurred_at + INTERVAL '1 day'
+ORDER BY w1.account_id, w1.occurred_at;
+
+----UNION
+SELECT *
+FROM accounts a1
+
+UNION ALL
+
+SELECT *
+FROM accounts a2;
+
+SELECT *
+FROM accounts a1
+WHERE name = 'Walmart'
+
+UNION ALL
+
+SELECT *
+FROM accounts a2
+WHERE name = 'Disney';
+
+WITH double_accounts AS (
+	SELECT *
+	FROM accounts a1
+
+	UNION ALL
+
+	SELECT *
+	FROM accounts a2)
+
+SELECT da.name, COUNT(da.id) occurrence
+FROM double_accounts da
+GROUP BY 1;
 
